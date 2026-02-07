@@ -1,0 +1,222 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@700;800;900&display=swap&text=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 4.7%;
+    --foreground: 40 20% 95%;
+    --card: 0 0% 6%;
+    --card-foreground: 40 20% 95%;
+    --popover: 0 0% 6%;
+    --popover-foreground: 40 20% 95%;
+    --primary: 42 45% 57%;
+    --primary-foreground: 0 0% 4.7%;
+    --secondary: 18 25% 34%;
+    --secondary-foreground: 40 20% 95%;
+    --muted: 0 0% 12%;
+    --muted-foreground: 40 10% 72%;
+    --accent: 42 45% 57%;
+    --accent-foreground: 0 0% 4.7%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 18%;
+    --input: 0 0% 18%;
+    --ring: 42 45% 57%;
+    --radius: 0.875rem;
+    
+    --vendaa-black: #0B0B0D;
+    --vendaa-taupe: #6B4C42;
+    --vendaa-gold: #C8A45C;
+    --vendaa-white: #F4F1EC;
+    --vendaa-muted: rgba(244, 241, 236, 0.72);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  html {
+    /* REMOVED scroll-behavior: smooth for performance */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  body {
+    @apply bg-[#0B0B0D] text-[#F4F1EC] antialiased;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    overflow-x: hidden;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+  
+  .font-mono {
+    font-family: ui-monospace, 'Courier New', monospace;
+  }
+}
+
+@layer components {
+  /* Optimized gradient with GPU acceleration */
+  .text-gradient-gold {
+    background: linear-gradient(135deg, #C8A45C 0%, #E8D4A0 50%, #C8A45C 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    will-change: auto; /* Don't force GPU layer */
+  }
+  
+  /* Optimized button animations - GPU accelerated */
+  .btn-primary {
+    @apply px-8 py-4 bg-[#C8A45C] text-[#0B0B0D] font-semibold rounded-full;
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform;
+  }
+  
+  .btn-primary:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 12px 40px rgba(200, 164, 92, 0.3);
+  }
+  
+  .btn-primary:active {
+    transform: translateY(0) scale(1);
+  }
+  
+  .btn-secondary {
+    @apply px-8 py-4 border border-[#F4F1EC]/30 text-[#F4F1EC] font-semibold rounded-full;
+    transition: border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+    will-change: transform;
+  }
+  
+  .btn-secondary:hover {
+    @apply border-[#C8A45C] text-[#C8A45C];
+    transform: translateY(-2px);
+  }
+  
+  .btn-secondary:active {
+    transform: translateY(0);
+  }
+  
+  .card-luxury {
+    @apply rounded-[22px] overflow-hidden;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
+  }
+  
+  /* Optimized grain overlay - static, no animation */
+  .grain-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.03;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  }
+  
+  .heading-display {
+    font-size: clamp(48px, 7vw, 96px);
+    line-height: 0.95;
+    font-weight: 900;
+  }
+  
+  .heading-section {
+    font-size: clamp(36px, 5vw, 72px);
+    line-height: 1;
+    font-weight: 800;
+  }
+  
+  .text-micro {
+    @apply text-xs uppercase tracking-[0.12em];
+    font-family: ui-monospace, monospace;
+  }
+  
+  .nav-link {
+    @apply relative text-sm font-medium text-[#F4F1EC]/80;
+    transition: color 0.2s ease;
+  }
+  
+  .nav-link:hover {
+    @apply text-[#C8A45C];
+  }
+  
+  .nav-link::after {
+    content: '';
+    @apply absolute bottom-0 left-0 w-0 h-px bg-[#C8A45C];
+    transition: width 0.2s ease;
+  }
+  
+  .nav-link:hover::after {
+    @apply w-full;
+  }
+  
+  /* Hero entrance animations - GPU accelerated, single trigger */
+  .animate-in {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.25s ease-out, transform 0.25s ease-out;
+    will-change: opacity, transform;
+  }
+  
+  .animate-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Minimal scrollbar - native feel */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(200, 164, 92, 0.3);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(200, 164, 92, 0.5);
+}
+
+/* Selection */
+::selection {
+  background: rgba(200, 164, 92, 0.3);
+  color: #F4F1EC;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .animate-in {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Performance: Force GPU compositing for frequently animated elements */
+.product-card,
+.btn-primary,
+.btn-secondary {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
