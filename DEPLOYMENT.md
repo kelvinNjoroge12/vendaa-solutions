@@ -212,7 +212,30 @@ Visit `http://localhost:4173` to test the production build.
 
 ---
 
-## 🔒 Environment Variables
+---
+
+## 🔒 Security & Database Setup
+
+Before deploying, you **MUST** configure your Supabase database security.
+
+### 1. Apply RLS Policies
+We have generated a SQL file to secure your data.
+1. Go to your Supabase Dashboard -> SQL Editor.
+2. Click "New Query".
+3. Open `supabase/security.sql` from this project.
+4. Copy the contents and paste them into the SQL Editor.
+5. Click **Run**.
+   *   This enables Row Level Security (RLS) for all tables.
+   *   It sets up "Public Read" access for website visitors.
+   *   It restricts "Write/Update/Delete" access to Authenticated Admins only.
+
+### 2. Verify Admin Login
+We have removed the insecure hardcoded credentials.
+- Ensure your `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are set in Vercel/Netlify.
+- Create your admin user in Supabase Authentication -> Users.
+- Login via `/admin` using these credentials.
+
+---
 
 For production, set these environment variables in your hosting platform:
 

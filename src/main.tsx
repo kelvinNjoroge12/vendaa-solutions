@@ -4,10 +4,14 @@ import './index.css'
 import { CmsProvider } from './store/CmsContext'
 import App from './App.tsx'
 
+import { HelmetProvider } from 'react-helmet-async';
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <CmsProvider>
-      <App />
-    </CmsProvider>
+    <HelmetProvider>
+      <CmsProvider>
+        <App />
+      </CmsProvider>
+    </HelmetProvider>
   </StrictMode>,
-)
+);

@@ -37,7 +37,7 @@ export async function fetchSettings(): Promise<SiteSettings | null> {
   if (!supabase) return null;
   const { data, error } = await supabase.from('settings').select('*').eq('id', 'global').single();
   if (error || !data) return null;
-  return { currencyCode: data.currency_code ?? 'USD', currencySymbol: data.currency_symbol ?? '$' };
+  return { currencyCode: data.currency_code ?? 'USD', currencySymbol: data.currency_symbol ?? '$', heroImage: data.hero_image ?? undefined };
 }
 
 export async function saveProducts(products: Product[]): Promise<boolean> {
@@ -76,7 +76,7 @@ export async function saveCaseStudies(caseStudies: CaseStudy[]): Promise<boolean
 export async function saveSettings(settings: SiteSettings): Promise<boolean> {
   if (!supabase) return false;
   const { error } = await supabase.from('settings').upsert(
-    { id: 'global', currency_code: settings.currencyCode, currency_symbol: settings.currencySymbol ?? '$' },
+    { id: 'global', currency_code: settings.currencyCode, currency_symbol: settings.currencySymbol ?? '$', hero_image: settings.heroImage ?? null },
     { onConflict: 'id' }
   );
   if (error) {
@@ -97,6 +97,40 @@ export async function uploadProductImage(productId: string, field: 'image' | 'be
   });
   if (error) {
     console.error('Supabase upload image:', error);
+    return null;
+  }
+  const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(path);
+  return urlData?.publicUrl ?? null;
+}
+
+/** Upload a case-study image from file; returns public URL or null. */
+export async function uploadCaseStudyImage(caseStudyId: string, field: 'before_image' | 'after_image', file: File): Promise<string | null> {
+  if (!supabase) return null;
+  const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+  const path = `case-studies/${caseStudyId}/${field}.${ext}`;
+  const { error } = await supabase.storage.from(BUCKET).upload(path, file, {
+    cacheControl: '3600',
+    upsert: true,
+  });
+  if (error) {
+    console.error('Supabase upload case study image:', error);
+    return null;
+  }
+  const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(path);
+  return urlData?.publicUrl ?? null;
+}
+
+/** Upload the hero section image; returns public URL or null. */
+export async function uploadHeroImage(file: File): Promise<string | null> {
+  if (!supabase) return null;
+  const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+  const path = `site-assets/hero.${ext}`;
+  const { error } = await supabase.storage.from(BUCKET).upload(path, file, {
+    cacheControl: '3600',
+    upsert: true,
+  });
+  if (error) {
+    console.error('Supabase upload hero image:', error);
     return null;
   }
   const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(path);

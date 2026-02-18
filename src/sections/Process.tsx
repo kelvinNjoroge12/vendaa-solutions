@@ -1,4 +1,5 @@
 import { Search, Palette, Truck } from 'lucide-react';
+import { useScrollReveal } from '@/hooks/useScrollReveal';
 
 const steps = [
   {
@@ -22,14 +23,17 @@ const steps = [
 ];
 
 export default function Process() {
+  const containerRef = useScrollReveal();
+
   return (
     <section
       id="process"
+      ref={containerRef}
       className="relative bg-[#0B0B0D] py-16 lg:py-24"
     >
       <div className="px-4 sm:px-8 lg:px-[8vw]">
         {/* Heading */}
-        <div className="mb-12">
+        <div className="mb-12 scroll-reveal">
           <h2 className="heading-section text-[#F4F1EC] uppercase mb-3">
             How We <span className="text-gradient-gold">Work</span>
           </h2>
@@ -39,7 +43,7 @@ export default function Process() {
         </div>
 
         {/* Steps - Compact Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 lg:gap-6 max-w-5xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 lg:gap-6 max-w-5xl mx-auto scroll-reveal delay-100">
           {steps.map((step, index) => (
             <div
               key={index}

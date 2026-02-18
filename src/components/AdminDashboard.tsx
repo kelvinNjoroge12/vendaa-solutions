@@ -16,11 +16,21 @@ import {
   Upload,
 } from 'lucide-react';
 import { useCms } from '@/store/CmsContext';
-import { categories } from '@/data/products';
+import {
+  categories,
+  products as defaultProducts,
+  testimonials as defaultTestimonials,
+  caseStudies as defaultCaseStudies,
+} from '@/data/products';
+import {
+  saveProducts,
+  saveTestimonials,
+  saveCaseStudies,
+} from '@/lib/supabaseCms';
 import type { Product, CaseStudy, Testimonial } from '@/types';
 import { toast } from 'sonner';
 import { isSupabaseConfigured } from '@/lib/supabase';
-import { uploadProductImage } from '@/lib/supabaseCms';
+import { uploadProductImage, uploadCaseStudyImage, uploadHeroImage } from '@/lib/supabaseCms';
 
 interface AdminDashboardProps {
   onLogout: () => void;
@@ -43,7 +53,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editingItem, setEditingItem] = useState<Product | CaseStudy | Testimonial | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [uploadingImage, setUploadingImage] = useState<'image' | 'before_image' | 'after_image' | null>(null);
+  const [uploadingImage, setUploadingImage] = useState<string | null>(null);
 
   useEffect(() => {
     gsap.fromTo(
@@ -343,6 +353,80 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
 
   const renderSettingsTab = () => (
     <div className="space-y-6">
+      {/* Hero Image */}
+      <div className="p-6 bg-[#F4F1EC]/5 rounded-xl border border-[#F4F1EC]/10">
+        <h3 className="text-lg font-semibold text-[#F4F1EC] mb-4">Hero Image</h3>
+        <p className="text-sm text-[#F4F1EC]/60 mb-4">
+          This image is displayed on the main hero section at the top of the site.
+        </p>
+        <label className="block w-full max-w-md cursor-pointer group">
+          <div className={`relative w-full h-48 rounded-lg overflow-hidden border-2 border-dashed transition-colors ${settings.heroImage ? 'border-[#F4F1EC]/20 hover:border-[#C8A45C]/60' : 'border-[#C8A45C]/40 hover:border-[#C8A45C]/80'
+            } bg-[#F4F1EC]/5 flex items-center justify-center`}>
+            {uploadingImage === 'hero' ? (
+              <div className="flex flex-col items-center gap-2 text-[#C8A45C]">
+                <div className="w-6 h-6 border-2 border-[#C8A45C] border-t-transparent rounded-full animate-spin" />
+                <span className="text-xs">Uploading…</span>
+              </div>
+            ) : settings.heroImage ? (
+              <>
+                <img src={settings.heroImage} alt="Hero" className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-[#0B0B0D]/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <div className="flex items-center gap-2 text-[#C8A45C] text-sm font-medium">
+                    <Upload className="w-4 h-4" />
+                    Change hero image
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="flex flex-col items-center gap-2 text-[#F4F1EC]/50 group-hover:text-[#C8A45C] transition-colors">
+                <Upload className="w-8 h-8" />
+                <span className="text-sm">Click to upload hero image</span>
+                <span className="text-xs text-[#F4F1EC]/30">Currently using default</span>
+              </div>
+            )}
+          </div>
+          <input
+            type="file"
+            accept="image/*"
+            className="hidden"
+            disabled={uploadingImage !== null}
+            onChange={async (e) => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+              const localPreview = URL.createObjectURL(file);
+              setSettings({ heroImage: localPreview });
+              if (isSupabaseConfigured) {
+                setUploadingImage('hero');
+                const url = await uploadHeroImage(file);
+                setUploadingImage(null);
+                if (url) {
+                  setSettings({ heroImage: url });
+                  toast.success('Hero image uploaded');
+                } else {
+                  toast.error('Upload failed \u2014 using local preview');
+                }
+              } else {
+                toast.success('Hero image selected (local preview)');
+              }
+              e.target.value = '';
+            }}
+          />
+        </label>
+        {settings.heroImage && (
+          <button
+            type="button"
+            onClick={() => {
+              setSettings({ heroImage: undefined });
+              toast.success('Hero image reset to default');
+            }}
+            className="mt-3 text-sm text-red-400 hover:underline"
+          >
+            Reset to default
+          </button>
+        )}
+      </div>
+
+      {/* Currency */}
       <div className="p-6 bg-[#F4F1EC]/5 rounded-xl border border-[#F4F1EC]/10">
         <h3 className="text-lg font-semibold text-[#F4F1EC] mb-4">Currency (site-wide)</h3>
         <p className="text-sm text-[#F4F1EC]/60 mb-4">
@@ -375,6 +459,50 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
           className="mt-4 px-4 py-2 bg-[#C8A45C] text-[#0B0B0D] rounded-lg font-medium hover:bg-[#D4B76A] transition-colors"
         >
           Save currency
+        </button>
+      </div>
+
+      {/* Database Management */}
+      <div className="p-6 bg-[#F4F1EC]/5 rounded-xl border border-[#F4F1EC]/10">
+        <h3 className="text-lg font-semibold text-[#F4F1EC] mb-4">Database Management</h3>
+        <p className="text-sm text-[#F4F1EC]/60 mb-4">
+          Populate your live database with the default demo content. This is useful for initial setup.
+          <br />
+          <span className="text-yellow-500/80">Warning: This will add duplicate items if they already exist.</span>
+        </p>
+
+        <button
+          onClick={async () => {
+            if (!isSupabaseConfigured) {
+              toast.error('Supabase is not configured.');
+              return;
+            }
+            if (
+              !confirm(
+                'Are you sure you want to seed the database? This will add all default products, testimonials, and case studies to your live database.'
+              )
+            ) {
+              return;
+            }
+
+            const toastId = toast.loading('Seeding database...');
+            try {
+              await Promise.all([
+                saveProducts(defaultProducts),
+                saveTestimonials(defaultTestimonials),
+                saveCaseStudies(defaultCaseStudies),
+              ]);
+              toast.success('Database seeded successfully!', { id: toastId });
+              setTimeout(() => window.location.reload(), 1500);
+            } catch (error) {
+              console.error(error);
+              toast.error('Failed to seed database.', { id: toastId });
+            }
+          }}
+          className="flex items-center gap-2 px-4 py-2 bg-[#F4F1EC]/10 text-[#F4F1EC] rounded-lg font-medium hover:bg-[#F4F1EC]/20 transition-colors"
+        >
+          <Upload className="w-4 h-4" />
+          Seed Database with Defaults
         </button>
       </div>
     </div>
@@ -420,22 +548,84 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
         </div>
         <div>
           <label className="block text-sm text-[#F4F1EC]/70 mb-2">Main image</label>
-          {p.image && (
-            <div className="mb-2 w-20 h-20 rounded-lg overflow-hidden bg-[#F4F1EC]/10 border border-[#F4F1EC]/10">
-              <img src={p.image} alt="" className="w-full h-full object-cover" />
+          <label className="block w-full cursor-pointer group">
+            <div className={`relative w-full h-40 rounded-lg overflow-hidden border-2 border-dashed transition-colors ${p.image ? 'border-[#F4F1EC]/20 hover:border-[#C8A45C]/60' : 'border-[#C8A45C]/40 hover:border-[#C8A45C]/80'
+              } bg-[#F4F1EC]/5 flex items-center justify-center`}>
+              {uploadingImage === 'p_image' ? (
+                <div className="flex flex-col items-center gap-2 text-[#C8A45C]">
+                  <div className="w-6 h-6 border-2 border-[#C8A45C] border-t-transparent rounded-full animate-spin" />
+                  <span className="text-xs">Uploading…</span>
+                </div>
+              ) : p.image ? (
+                <>
+                  <img src={p.image} alt="" className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-[#0B0B0D]/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <div className="flex items-center gap-2 text-[#C8A45C] text-sm font-medium">
+                      <Upload className="w-4 h-4" />
+                      Change image
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="flex flex-col items-center gap-2 text-[#F4F1EC]/50 group-hover:text-[#C8A45C] transition-colors">
+                  <Upload className="w-8 h-8" />
+                  <span className="text-sm">Click to upload image</span>
+                </div>
+              )}
             </div>
-          )}
-          <input
-            type="text"
-            value={p.image}
-            onChange={(e) => setEditingItem({ ...p, image: e.target.value })}
-            className="w-full px-4 py-2 bg-[#F4F1EC]/5 border border-[#F4F1EC]/10 rounded-lg text-[#F4F1EC] focus:outline-none focus:border-[#C8A45C]/50 mb-2"
-            placeholder="URL or upload below"
-          />
-          {isSupabaseConfigured && (
-            <label className="inline-flex items-center gap-2 px-3 py-2 bg-[#C8A45C]/20 text-[#C8A45C] rounded-lg cursor-pointer text-sm font-medium hover:bg-[#C8A45C]/30 transition-colors">
-              <Upload className="w-4 h-4" />
-              {uploadingImage === 'image' ? 'Uploading...' : 'Upload from laptop'}
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              disabled={uploadingImage !== null}
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const localPreview = URL.createObjectURL(file);
+                setEditingItem({ ...p, image: localPreview });
+                if (isSupabaseConfigured) {
+                  setUploadingImage('p_image');
+                  const url = await uploadProductImage(p.id, 'image', file);
+                  setUploadingImage(null);
+                  if (url) {
+                    setEditingItem({ ...p, image: url });
+                    toast.success('Image uploaded');
+                  } else {
+                    toast.error('Upload failed — using local preview');
+                  }
+                } else {
+                  toast.success('Image selected (local preview)');
+                }
+                e.target.value = '';
+              }}
+            />
+          </label>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm text-[#F4F1EC]/70 mb-2">Before image</label>
+            <label className="block w-full cursor-pointer group">
+              <div className={`relative w-full h-28 rounded-lg overflow-hidden border-2 border-dashed transition-colors ${p.beforeImage ? 'border-[#F4F1EC]/20 hover:border-[#C8A45C]/60' : 'border-[#C8A45C]/40 hover:border-[#C8A45C]/80'
+                } bg-[#F4F1EC]/5 flex items-center justify-center`}>
+                {uploadingImage === 'p_before' ? (
+                  <div className="flex flex-col items-center gap-1 text-[#C8A45C]">
+                    <div className="w-5 h-5 border-2 border-[#C8A45C] border-t-transparent rounded-full animate-spin" />
+                    <span className="text-xs">Uploading…</span>
+                  </div>
+                ) : p.beforeImage ? (
+                  <>
+                    <img src={p.beforeImage} alt="" className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-[#0B0B0D]/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <Upload className="w-4 h-4 text-[#C8A45C]" />
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex flex-col items-center gap-1 text-[#F4F1EC]/50 group-hover:text-[#C8A45C] transition-colors">
+                    <Upload className="w-5 h-5" />
+                    <span className="text-xs">Upload</span>
+                  </div>
+                )}
+              </div>
               <input
                 type="file"
                 accept="image/*"
@@ -444,97 +634,77 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
                 onChange={async (e) => {
                   const file = e.target.files?.[0];
                   if (!file) return;
-                  setUploadingImage('image');
-                  const url = await uploadProductImage(p.id, 'image', file);
-                  setUploadingImage(null);
-                  e.target.value = '';
-                  if (url) {
-                    setEditingItem({ ...p, image: url });
-                    toast.success('Image uploaded');
-                  } else toast.error('Upload failed');
-                }}
-              />
-            </label>
-          )}
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm text-[#F4F1EC]/70 mb-2">Before image</label>
-            {p.beforeImage && (
-              <div className="mb-2 w-20 h-20 rounded-lg overflow-hidden bg-[#F4F1EC]/10 border border-[#F4F1EC]/10">
-                <img src={p.beforeImage} alt="" className="w-full h-full object-cover" />
-              </div>
-            )}
-            <input
-              type="text"
-              value={p.beforeImage ?? ''}
-              onChange={(e) => setEditingItem({ ...p, beforeImage: e.target.value || undefined })}
-              className="w-full px-4 py-2 bg-[#F4F1EC]/5 border border-[#F4F1EC]/10 rounded-lg text-[#F4F1EC] focus:outline-none focus:border-[#C8A45C]/50 mb-2"
-              placeholder="URL or upload"
-            />
-            {isSupabaseConfigured && (
-              <label className="inline-flex items-center gap-2 px-3 py-2 bg-[#C8A45C]/20 text-[#C8A45C] rounded-lg cursor-pointer text-sm font-medium hover:bg-[#C8A45C]/30 transition-colors">
-                <Upload className="w-4 h-4" />
-                {uploadingImage === 'before_image' ? '...' : 'Upload'}
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  disabled={uploadingImage !== null}
-                  onChange={async (e) => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
-                    setUploadingImage('before_image');
+                  const localPreview = URL.createObjectURL(file);
+                  setEditingItem({ ...p, beforeImage: localPreview });
+                  if (isSupabaseConfigured) {
+                    setUploadingImage('p_before');
                     const url = await uploadProductImage(p.id, 'before_image', file);
                     setUploadingImage(null);
-                    e.target.value = '';
                     if (url) {
                       setEditingItem({ ...p, beforeImage: url });
                       toast.success('Before image uploaded');
-                    } else toast.error('Upload failed');
-                  }}
-                />
-              </label>
-            )}
+                    } else {
+                      toast.error('Upload failed — using local preview');
+                    }
+                  } else {
+                    toast.success('Image selected (local preview)');
+                  }
+                  e.target.value = '';
+                }}
+              />
+            </label>
           </div>
           <div>
             <label className="block text-sm text-[#F4F1EC]/70 mb-2">After image</label>
-            {p.afterImage && (
-              <div className="mb-2 w-20 h-20 rounded-lg overflow-hidden bg-[#F4F1EC]/10 border border-[#F4F1EC]/10">
-                <img src={p.afterImage} alt="" className="w-full h-full object-cover" />
+            <label className="block w-full cursor-pointer group">
+              <div className={`relative w-full h-28 rounded-lg overflow-hidden border-2 border-dashed transition-colors ${p.afterImage ? 'border-[#F4F1EC]/20 hover:border-[#C8A45C]/60' : 'border-[#C8A45C]/40 hover:border-[#C8A45C]/80'
+                } bg-[#F4F1EC]/5 flex items-center justify-center`}>
+                {uploadingImage === 'p_after' ? (
+                  <div className="flex flex-col items-center gap-1 text-[#C8A45C]">
+                    <div className="w-5 h-5 border-2 border-[#C8A45C] border-t-transparent rounded-full animate-spin" />
+                    <span className="text-xs">Uploading…</span>
+                  </div>
+                ) : p.afterImage ? (
+                  <>
+                    <img src={p.afterImage} alt="" className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-[#0B0B0D]/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <Upload className="w-4 h-4 text-[#C8A45C]" />
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex flex-col items-center gap-1 text-[#F4F1EC]/50 group-hover:text-[#C8A45C] transition-colors">
+                    <Upload className="w-5 h-5" />
+                    <span className="text-xs">Upload</span>
+                  </div>
+                )}
               </div>
-            )}
-            <input
-              type="text"
-              value={p.afterImage ?? ''}
-              onChange={(e) => setEditingItem({ ...p, afterImage: e.target.value || undefined })}
-              className="w-full px-4 py-2 bg-[#F4F1EC]/5 border border-[#F4F1EC]/10 rounded-lg text-[#F4F1EC] focus:outline-none focus:border-[#C8A45C]/50 mb-2"
-              placeholder="URL or upload"
-            />
-            {isSupabaseConfigured && (
-              <label className="inline-flex items-center gap-2 px-3 py-2 bg-[#C8A45C]/20 text-[#C8A45C] rounded-lg cursor-pointer text-sm font-medium hover:bg-[#C8A45C]/30 transition-colors">
-                <Upload className="w-4 h-4" />
-                {uploadingImage === 'after_image' ? '...' : 'Upload'}
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  disabled={uploadingImage !== null}
-                  onChange={async (e) => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
-                    setUploadingImage('after_image');
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                disabled={uploadingImage !== null}
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  const localPreview = URL.createObjectURL(file);
+                  setEditingItem({ ...p, afterImage: localPreview });
+                  if (isSupabaseConfigured) {
+                    setUploadingImage('p_after');
                     const url = await uploadProductImage(p.id, 'after_image', file);
                     setUploadingImage(null);
-                    e.target.value = '';
                     if (url) {
                       setEditingItem({ ...p, afterImage: url });
                       toast.success('After image uploaded');
-                    } else toast.error('Upload failed');
-                  }}
-                />
-              </label>
-            )}
+                    } else {
+                      toast.error('Upload failed — using local preview');
+                    }
+                  } else {
+                    toast.success('Image selected (local preview)');
+                  }
+                  e.target.value = '';
+                }}
+              />
+            </label>
           </div>
         </div>
         <div>
@@ -713,23 +883,111 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
             className="w-full px-4 py-2 bg-[#F4F1EC]/5 border border-[#F4F1EC]/10 rounded-lg text-[#F4F1EC] focus:outline-none focus:border-[#C8A45C]/50 resize-none"
           />
         </div>
-        <div>
-          <label className="block text-sm text-[#F4F1EC]/70 mb-2">Before image URL</label>
-          <input
-            type="text"
-            value={c.beforeImage}
-            onChange={(e) => setEditingItem({ ...c, beforeImage: e.target.value })}
-            className="w-full px-4 py-2 bg-[#F4F1EC]/5 border border-[#F4F1EC]/10 rounded-lg text-[#F4F1EC] focus:outline-none focus:border-[#C8A45C]/50"
-          />
-        </div>
-        <div>
-          <label className="block text-sm text-[#F4F1EC]/70 mb-2">After image URL</label>
-          <input
-            type="text"
-            value={c.afterImage}
-            onChange={(e) => setEditingItem({ ...c, afterImage: e.target.value })}
-            className="w-full px-4 py-2 bg-[#F4F1EC]/5 border border-[#F4F1EC]/10 rounded-lg text-[#F4F1EC] focus:outline-none focus:border-[#C8A45C]/50"
-          />
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm text-[#F4F1EC]/70 mb-2">Before image</label>
+            <label className="block w-full cursor-pointer group">
+              <div className={`relative w-full h-28 rounded-lg overflow-hidden border-2 border-dashed transition-colors ${c.beforeImage ? 'border-[#F4F1EC]/20 hover:border-[#C8A45C]/60' : 'border-[#C8A45C]/40 hover:border-[#C8A45C]/80'
+                } bg-[#F4F1EC]/5 flex items-center justify-center`}>
+                {uploadingImage === 'cs_before' ? (
+                  <div className="flex flex-col items-center gap-1 text-[#C8A45C]">
+                    <div className="w-5 h-5 border-2 border-[#C8A45C] border-t-transparent rounded-full animate-spin" />
+                    <span className="text-xs">Uploading…</span>
+                  </div>
+                ) : c.beforeImage ? (
+                  <>
+                    <img src={c.beforeImage} alt="" className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-[#0B0B0D]/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <Upload className="w-4 h-4 text-[#C8A45C]" />
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex flex-col items-center gap-1 text-[#F4F1EC]/50 group-hover:text-[#C8A45C] transition-colors">
+                    <Upload className="w-5 h-5" />
+                    <span className="text-xs">Upload</span>
+                  </div>
+                )}
+              </div>
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                disabled={uploadingImage !== null}
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  const localPreview = URL.createObjectURL(file);
+                  setEditingItem({ ...c, beforeImage: localPreview });
+                  if (isSupabaseConfigured) {
+                    setUploadingImage('cs_before');
+                    const url = await uploadCaseStudyImage(c.id, 'before_image', file);
+                    setUploadingImage(null);
+                    if (url) {
+                      setEditingItem({ ...c, beforeImage: url });
+                      toast.success('Before image uploaded');
+                    } else {
+                      toast.error('Upload failed — using local preview');
+                    }
+                  } else {
+                    toast.success('Image selected (local preview)');
+                  }
+                  e.target.value = '';
+                }}
+              />
+            </label>
+          </div>
+          <div>
+            <label className="block text-sm text-[#F4F1EC]/70 mb-2">After image</label>
+            <label className="block w-full cursor-pointer group">
+              <div className={`relative w-full h-28 rounded-lg overflow-hidden border-2 border-dashed transition-colors ${c.afterImage ? 'border-[#F4F1EC]/20 hover:border-[#C8A45C]/60' : 'border-[#C8A45C]/40 hover:border-[#C8A45C]/80'
+                } bg-[#F4F1EC]/5 flex items-center justify-center`}>
+                {uploadingImage === 'cs_after' ? (
+                  <div className="flex flex-col items-center gap-1 text-[#C8A45C]">
+                    <div className="w-5 h-5 border-2 border-[#C8A45C] border-t-transparent rounded-full animate-spin" />
+                    <span className="text-xs">Uploading…</span>
+                  </div>
+                ) : c.afterImage ? (
+                  <>
+                    <img src={c.afterImage} alt="" className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-[#0B0B0D]/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <Upload className="w-4 h-4 text-[#C8A45C]" />
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex flex-col items-center gap-1 text-[#F4F1EC]/50 group-hover:text-[#C8A45C] transition-colors">
+                    <Upload className="w-5 h-5" />
+                    <span className="text-xs">Upload</span>
+                  </div>
+                )}
+              </div>
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                disabled={uploadingImage !== null}
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  const localPreview = URL.createObjectURL(file);
+                  setEditingItem({ ...c, afterImage: localPreview });
+                  if (isSupabaseConfigured) {
+                    setUploadingImage('cs_after');
+                    const url = await uploadCaseStudyImage(c.id, 'after_image', file);
+                    setUploadingImage(null);
+                    if (url) {
+                      setEditingItem({ ...c, afterImage: url });
+                      toast.success('After image uploaded');
+                    } else {
+                      toast.error('Upload failed — using local preview');
+                    }
+                  } else {
+                    toast.success('Image selected (local preview)');
+                  }
+                  e.target.value = '';
+                }}
+              />
+            </label>
+          </div>
         </div>
         <div>
           <label className="block text-sm text-[#F4F1EC]/70 mb-2">Results (one per line)</label>
@@ -760,36 +1018,32 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
           <div className="space-y-1">
             <button
               onClick={() => setActiveTab('products')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
-                activeTab === 'products' ? 'bg-[#C8A45C]/20 text-[#C8A45C]' : 'text-[#F4F1EC]/70 hover:bg-[#F4F1EC]/5'
-              }`}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${activeTab === 'products' ? 'bg-[#C8A45C]/20 text-[#C8A45C]' : 'text-[#F4F1EC]/70 hover:bg-[#F4F1EC]/5'
+                }`}
             >
               <Package className="w-5 h-5" />
               Products
             </button>
             <button
               onClick={() => setActiveTab('cases')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
-                activeTab === 'cases' ? 'bg-[#C8A45C]/20 text-[#C8A45C]' : 'text-[#F4F1EC]/70 hover:bg-[#F4F1EC]/5'
-              }`}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${activeTab === 'cases' ? 'bg-[#C8A45C]/20 text-[#C8A45C]' : 'text-[#F4F1EC]/70 hover:bg-[#F4F1EC]/5'
+                }`}
             >
               <Briefcase className="w-5 h-5" />
               Case Studies
             </button>
             <button
               onClick={() => setActiveTab('testimonials')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
-                activeTab === 'testimonials' ? 'bg-[#C8A45C]/20 text-[#C8A45C]' : 'text-[#F4F1EC]/70 hover:bg-[#F4F1EC]/5'
-              }`}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${activeTab === 'testimonials' ? 'bg-[#C8A45C]/20 text-[#C8A45C]' : 'text-[#F4F1EC]/70 hover:bg-[#F4F1EC]/5'
+                }`}
             >
               <LayoutDashboard className="w-5 h-5" />
               Testimonials
             </button>
             <button
               onClick={() => setActiveTab('settings')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
-                activeTab === 'settings' ? 'bg-[#C8A45C]/20 text-[#C8A45C]' : 'text-[#F4F1EC]/70 hover:bg-[#F4F1EC]/5'
-              }`}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${activeTab === 'settings' ? 'bg-[#C8A45C]/20 text-[#C8A45C]' : 'text-[#F4F1EC]/70 hover:bg-[#F4F1EC]/5'
+                }`}
             >
               <Settings className="w-5 h-5" />
               Settings

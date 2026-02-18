@@ -1,14 +1,17 @@
 import { ArrowRight } from 'lucide-react';
 import { useCms } from '@/store/CmsContext';
+import { useScrollReveal } from '@/hooks/useScrollReveal';
 
 export default function BeforeAfter() {
   const { caseStudies } = useCms();
+  const sectionRef = useScrollReveal<HTMLDivElement>([caseStudies]);
+
   return (
     <section
       id="work"
       className="relative bg-[#0B0B0D] py-16 lg:py-24"
     >
-      <div className="px-4 sm:px-8 lg:px-[8vw]">
+      <div ref={sectionRef} className="px-4 sm:px-8 lg:px-[8vw]">
         {/* Heading */}
         <div className="mb-12 max-w-7xl mx-auto">
           <h2 className="heading-section text-[#F4F1EC] uppercase mb-3">
@@ -24,7 +27,8 @@ export default function BeforeAfter() {
           {caseStudies.map((study, index) => (
             <div
               key={index}
-              className="comparison-row"
+              className="scroll-reveal comparison-row"
+              style={{ transitionDelay: `${index * 120}ms` }}
             >
               <div className="grid lg:grid-cols-2 gap-6 lg:gap-8 items-center">
                 {/* Before Card */}
@@ -32,7 +36,7 @@ export default function BeforeAfter() {
                   <div className="card-luxury relative overflow-hidden aspect-[4/3] bg-[#F4F1EC]/5">
                     <img
                       src={study.beforeImage}
-                      alt={`${study.product} - Before`}
+                      alt={`${study.title} - Before`}
                       loading="lazy"
                       className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                     />
@@ -54,7 +58,7 @@ export default function BeforeAfter() {
                   <div className="card-luxury relative overflow-hidden aspect-[4/3] bg-[#F4F1EC]/5">
                     <img
                       src={study.afterImage}
-                      alt={`${study.product} - After`}
+                      alt={`${study.title} - After`}
                       loading="lazy"
                       className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                     />
@@ -68,7 +72,7 @@ export default function BeforeAfter() {
               {/* Description */}
               <div className="mt-6 text-center">
                 <h3 className="text-lg font-bold text-[#F4F1EC] mb-2">
-                  {study.product}
+                  {study.title}
                 </h3>
                 <p className="text-sm text-[#F4F1EC]/60">
                   {study.description}

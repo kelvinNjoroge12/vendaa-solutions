@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { Search, Filter, ArrowRight, X } from 'lucide-react';
 import { useCms } from '@/store/CmsContext';
 import { categories } from '@/data/products';
@@ -13,19 +13,50 @@ export default function ProductCatalogue({ onProductClick }: ProductCataloguePro
   const [activeCategory, setActiveCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const gridRef = useRef<HTMLDivElement>(null);
 
   const filteredProducts = useMemo(() => {
     return products
       .filter((product) => {
         const matchesCategory = activeCategory === 'all' || product.category === activeCategory;
-        const matchesSearch = 
-          searchQuery === '' ||
-          product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          product.description.toLowerCase().includes(searchQuery.toLowerCase());
+        if (searchQuery === '') return matchesCategory;
+
+        const query = searchQuery.toLowerCase();
+        const categoryName = categories.find(c => c.slug === product.category)?.name ?? '';
+        const matchesSearch =
+          product.name.toLowerCase().includes(query) ||
+          product.description.toLowerCase().includes(query) ||
+          product.category.toLowerCase().includes(query) ||
+          categoryName.toLowerCase().includes(query) ||
+          product.brandingOptions.some(opt => opt.toLowerCase().includes(query));
         return matchesCategory && matchesSearch;
       })
-      .slice(0, 8);
+      .slice(0, 16); // Up to 4 rows of 4
   }, [products, activeCategory, searchQuery]);
+
+  // Scroll-reveal observer for product cards
+  const observerCallback = useCallback((entries: IntersectionObserverEntry[]) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('revealed');
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    const grid = gridRef.current;
+    if (!grid) return;
+
+    const observer = new IntersectionObserver(observerCallback, {
+      threshold: 0.1,
+      rootMargin: '0px 0px -40px 0px',
+    });
+
+    const cards = grid.querySelectorAll('.scroll-reveal');
+    cards.forEach((card) => observer.observe(card));
+
+    return () => observer.disconnect();
+  }, [filteredProducts, observerCallback]);
 
   return (
     <section
@@ -51,11 +82,10 @@ export default function ProductCatalogue({ onProductClick }: ProductCataloguePro
               <button
                 key={category.id}
                 onClick={() => setActiveCategory(category.slug)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors duration-200 ${
-                  activeCategory === category.slug
-                    ? 'bg-[#C8A45C] text-[#0B0B0D]'
-                    : 'bg-[#F4F1EC]/10 text-[#F4F1EC]/80 hover:bg-[#F4F1EC]/20'
-                }`}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors duration-200 ${activeCategory === category.slug
+                  ? 'bg-[#C8A45C] text-[#0B0B0D]'
+                  : 'bg-[#F4F1EC]/10 text-[#F4F1EC]/80 hover:bg-[#F4F1EC]/20'
+                  }`}
               >
                 {category.name}
               </button>
@@ -97,13 +127,17 @@ export default function ProductCatalogue({ onProductClick }: ProductCataloguePro
           </div>
         </div>
 
-        {/* Product Grid - Optimized with simple hover effects */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-5">
-          {filteredProducts.map((product) => (
+        {/* Product Grid — auto-fills 1→2→3→4 columns with scroll reveal */}
+        <div
+          ref={gridRef}
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-5"
+        >
+          {filteredProducts.map((product, index) => (
             <article
               key={product.id}
               onClick={() => onProductClick(product)}
-              className="product-card group cursor-pointer"
+              className="product-card scroll-reveal group cursor-pointer"
+              style={{ transitionDelay: `${(index % 4) * 80}ms` }}
             >
               <div className="card-luxury bg-[#0B0B0D] border border-[#F4F1EC]/10 overflow-hidden transition-all duration-200 hover:border-[#C8A45C]/40 hover:-translate-y-1">
                 {/* Image - Lazy loaded */}
@@ -159,11 +193,11 @@ export default function ProductCatalogue({ onProductClick }: ProductCataloguePro
           </div>
         )}
 
-        {/* View More CTA (if needed) */}
-        {filteredProducts.length === 8 && (
+        {/* Row count info */}
+        {filteredProducts.length >= 16 && (
           <div className="text-center mt-8">
             <p className="text-[#F4F1EC]/50 text-sm">
-              Showing 8 featured products
+              Showing top {filteredProducts.length} products
             </p>
           </div>
         )}

@@ -47,6 +47,7 @@ CREATE TABLE IF NOT EXISTS public.settings (
   id TEXT PRIMARY KEY DEFAULT 'global',
   currency_code TEXT NOT NULL DEFAULT 'USD',
   currency_symbol TEXT NOT NULL DEFAULT '$',
+  hero_image TEXT,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 

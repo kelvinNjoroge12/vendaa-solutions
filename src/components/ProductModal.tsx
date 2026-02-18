@@ -8,7 +8,7 @@ interface ProductModalProps {
   product: Product | null;
   isOpen: boolean;
   onClose: () => void;
-  onRequestQuote: () => void;
+  onRequestQuote: (product: Product) => void;
 }
 
 export default function ProductModal({ product, isOpen, onClose, onRequestQuote }: ProductModalProps) {
@@ -157,8 +157,8 @@ export default function ProductModal({ product, isOpen, onClose, onRequestQuote 
             <div className="flex flex-col sm:flex-row gap-3">
               <button
                 onClick={() => {
+                  if (product) onRequestQuote(product);
                   handleClose();
-                  setTimeout(onRequestQuote, 300);
                 }}
                 className="btn-primary flex items-center justify-center gap-2"
               >

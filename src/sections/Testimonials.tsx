@@ -1,17 +1,21 @@
 import { Star } from 'lucide-react';
 import { useCms } from '@/store/CmsContext';
+import { useScrollReveal } from '@/hooks/useScrollReveal';
 
 export default function Testimonials() {
   const { testimonials } = useCms();
+  const containerRef = useScrollReveal();
+
   return (
     <section
       id="testimonials"
+      ref={containerRef}
       className="relative bg-[#0B0B0D] py-16 lg:py-24"
     >
       <div className="px-4 sm:px-8 lg:px-[8vw]">
         <div className="max-w-7xl mx-auto">
           {/* Heading */}
-          <div className="text-center mb-12">
+          <div className="text-center mb-12 scroll-reveal">
             <h2 className="heading-section text-[#F4F1EC] uppercase mb-3">
               Client{' '}
               <span className="text-gradient-gold">Success Stories</span>
@@ -22,7 +26,7 @@ export default function Testimonials() {
           </div>
 
           {/* Testimonials Grid */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 scroll-reveal delay-100">
             {testimonials.map((testimonial) => (
               <div
                 key={testimonial.id}

@@ -1,4 +1,5 @@
 import { ArrowRight, Shirt, Package, Calendar, FileText } from 'lucide-react';
+import { useScrollReveal } from '@/hooks/useScrollReveal';
 
 const services = [
   { icon: Shirt, label: 'Branded Merchandise' },
@@ -8,6 +9,7 @@ const services = [
 ];
 
 export default function SignatureSolutions() {
+  const containerRef = useScrollReveal();
   const scrollToCatalogue = () => {
     const catalogueSection = document.getElementById('catalogue');
     if (catalogueSection) {
@@ -18,6 +20,7 @@ export default function SignatureSolutions() {
   return (
     <section
       id="solutions"
+      ref={containerRef}
       className="relative bg-[#0B0B0D] py-16 lg:py-24"
     >
       <div className="px-4 sm:px-8 lg:px-[8vw]">
@@ -25,7 +28,7 @@ export default function SignatureSolutions() {
           {/* Left Content */}
           <div>
             {/* Headline */}
-            <div className="mb-8">
+            <div className="mb-8 scroll-reveal">
               <h2 className="heading-section text-[#F4F1EC] uppercase leading-none">
                 Signature{' '}
                 <span className="text-gradient-gold">Solutions</span>
@@ -36,7 +39,7 @@ export default function SignatureSolutions() {
             </div>
 
             {/* Services List */}
-            <div className="space-y-3.5 mb-8">
+            <div className="space-y-3.5 mb-8 scroll-reveal delay-100">
               {services.map((service, index) => (
                 <div
                   key={index}
@@ -51,7 +54,7 @@ export default function SignatureSolutions() {
             {/* CTA */}
             <button
               onClick={scrollToCatalogue}
-              className="flex items-center gap-2 text-[#C8A45C] font-semibold hover:gap-3 transition-all duration-200"
+              className="flex items-center gap-2 text-[#C8A45C] font-semibold hover:gap-3 transition-all duration-200 scroll-reveal delay-200"
             >
               See the full catalogue
               <ArrowRight className="w-5 h-5" />
@@ -59,7 +62,7 @@ export default function SignatureSolutions() {
           </div>
 
           {/* Right Image Card */}
-          <div className="relative">
+          <div className="relative scroll-reveal delay-300">
             <div className="card-luxury relative overflow-hidden aspect-[4/3]">
               <img
                 src="/solutions_caps.jpg"

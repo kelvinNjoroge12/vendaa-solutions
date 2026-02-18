@@ -1,4 +1,5 @@
 import { Shield, Clock, Award, RefreshCw } from 'lucide-react';
+import { useScrollReveal } from '@/hooks/useScrollReveal';
 
 const metrics = [
   {
@@ -24,15 +25,18 @@ const metrics = [
 ];
 
 export default function ImpactMetrics() {
+  const containerRef = useScrollReveal();
+
   return (
     <section
       id="impact"
+      ref={containerRef}
       className="relative bg-[#0B0B0D] py-16 lg:py-20"
     >
       <div className="px-4 sm:px-8 lg:px-[8vw]">
         <div className="max-w-7xl mx-auto">
           {/* Heading */}
-          <div className="text-center mb-12">
+          <div className="text-center mb-12 scroll-reveal">
             <h2 className="heading-section text-[#F4F1EC] uppercase mb-3">
               Why Choose{' '}
               <span className="text-gradient-gold">Vendaa</span>
@@ -43,7 +47,7 @@ export default function ImpactMetrics() {
           </div>
 
           {/* Metrics Grid */}
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 scroll-reveal delay-100">
             {metrics.map((metric, index) => (
               <div
                 key={index}

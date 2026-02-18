@@ -80,13 +80,13 @@ export function CmsProvider({ children }: { children: ReactNode }) {
   const useSupabase = isSupabaseConfigured;
   const [loading, setLoading] = useState(useSupabase);
   const [products, setProductsState] = useState<Product[]>(() =>
-    useSupabase ? defaultProducts : loadFromStorage(STORAGE_KEYS.products, defaultProducts)
+    useSupabase ? [] : loadFromStorage(STORAGE_KEYS.products, defaultProducts)
   );
   const [testimonials, setTestimonialsState] = useState<Testimonial[]>(() =>
-    useSupabase ? defaultTestimonials : loadFromStorage(STORAGE_KEYS.testimonials, defaultTestimonials)
+    useSupabase ? [] : loadFromStorage(STORAGE_KEYS.testimonials, defaultTestimonials)
   );
   const [caseStudies, setCaseStudiesState] = useState<CaseStudy[]>(() =>
-    useSupabase ? defaultCaseStudies : loadFromStorage(STORAGE_KEYS.caseStudies, defaultCaseStudies)
+    useSupabase ? [] : loadFromStorage(STORAGE_KEYS.caseStudies, defaultCaseStudies)
   );
   const [settings, setSettingsState] = useState<SiteSettings>(() =>
     useSupabase ? defaultSettings : loadFromStorage(STORAGE_KEYS.settings, defaultSettings)
@@ -106,9 +106,9 @@ export function CmsProvider({ children }: { children: ReactNode }) {
         fetchSettings(),
       ]);
       if (cancelled) return;
-      if (prods.length > 0) setProductsState(prods);
-      if (testis.length > 0) setTestimonialsState(testis);
-      if (cases.length > 0) setCaseStudiesState(cases);
+      setProductsState(prods);
+      setTestimonialsState(testis);
+      setCaseStudiesState(cases);
       if (sets) setSettingsState(sets);
       setLoading(false);
     })();

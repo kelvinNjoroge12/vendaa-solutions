@@ -39,6 +39,7 @@ export interface Testimonial {
 export interface SiteSettings {
   currencyCode: string;
   currencySymbol?: string;
+  heroImage?: string;
 }
 
 export interface NavItem {

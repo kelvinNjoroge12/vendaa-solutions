@@ -1,4 +1,5 @@
 import { Building2, Users, Trophy, TrendingUp } from 'lucide-react';
+import { useScrollReveal } from '@/hooks/useScrollReveal';
 
 const stats = [
   { icon: Building2, value: '500+', label: 'Companies Served' },
@@ -8,15 +9,18 @@ const stats = [
 ];
 
 export default function TrustedBy() {
+  const containerRef = useScrollReveal();
+
   return (
     <section
       id="trusted"
+      ref={containerRef}
       className="relative bg-[#0B0B0D] py-16 lg:py-20"
     >
       <div className="px-4 sm:px-8 lg:px-[8vw]">
         <div className="max-w-7xl mx-auto">
           {/* Heading */}
-          <div className="text-center mb-12">
+          <div className="text-center mb-12 scroll-reveal">
             <h2 className="heading-section text-[#F4F1EC] uppercase mb-3">
               Trusted By{' '}
               <span className="text-gradient-gold">Industry Leaders</span>
@@ -27,7 +31,7 @@ export default function TrustedBy() {
           </div>
 
           {/* Stats Grid */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 scroll-reveal delay-100">
             {stats.map((stat, index) => (
               <div
                 key={index}

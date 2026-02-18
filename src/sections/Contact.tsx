@@ -7,7 +7,11 @@ import { toast } from 'sonner';
 gsap.registerPlugin(ScrollTrigger);
 
 
-export default function Contact() {
+interface ContactProps {
+  quoteRequest?: { id: number; message: string } | null;
+}
+
+export default function Contact({ quoteRequest }: ContactProps) {
   const sectionRef = useRef<HTMLElement>(null);
   const headingRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
@@ -19,6 +23,14 @@ export default function Contact() {
     company: '',
     message: '',
   });
+
+  // Update message when quoteRequest changes (using ID to force update even if message is same)
+  useEffect(() => {
+    if (quoteRequest) {
+      setFormData(prev => ({ ...prev, message: quoteRequest.message }));
+    }
+  }, [quoteRequest]);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {

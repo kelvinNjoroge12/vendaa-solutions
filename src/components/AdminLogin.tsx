@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { gsap } from 'gsap';
-import { Lock, User, Mail, ArrowRight } from 'lucide-react';
+import { Lock, Mail, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
@@ -18,33 +18,40 @@ export default function AdminLogin({ onLogin }: AdminLoginProps) {
 
   const useSupabaseAuth = isSupabaseConfigured && supabase;
 
+  // Move animation to useEffect to prevent re-running on every render (causing shake)
+  useEffect(() => {
+    gsap.fromTo(
+      '.login-card',
+      { y: 30, opacity: 0, scale: 0.95 },
+      { y: 0, opacity: 1, scale: 1, duration: 0.5, ease: 'power2.out' }
+    );
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      if (useSupabaseAuth) {
-        const { data, error } = await supabase!.auth.signInWithPassword({
-          email: credentials.email.trim(),
-          password: credentials.password,
-        });
-        if (error) {
-          toast.error(error.message || 'Invalid credentials.');
-          setIsLoading(false);
-          return;
-        }
-        if (data.session) {
-          toast.success('Welcome back, Admin!');
-          onLogin();
-        }
-      } else {
-        await new Promise((r) => setTimeout(r, 500));
-        if (credentials.username === 'admin' && credentials.password === 'vendaa2024') {
-          toast.success('Welcome back, Admin!');
-          onLogin();
-        } else {
-          toast.error('Invalid credentials. Please try again.');
-        }
+      if (!useSupabaseAuth) {
+        toast.error('Supabase is not configured. Please check your environment variables.');
+        setIsLoading(false);
+        return;
+      }
+
+      const { data, error } = await supabase!.auth.signInWithPassword({
+        email: credentials.email.trim(),
+        password: credentials.password,
+      });
+
+      if (error) {
+        toast.error(error.message || 'Invalid credentials.');
+        setIsLoading(false);
+        return;
+      }
+
+      if (data.session) {
+        toast.success('Welcome back, Admin!');
+        onLogin();
       }
     } finally {
       setIsLoading(false);
@@ -57,14 +64,6 @@ export default function AdminLogin({ onLogin }: AdminLoginProps) {
       [e.target.name]: e.target.value,
     }));
   };
-
-  setTimeout(() => {
-    gsap.fromTo(
-      '.login-card',
-      { y: 30, opacity: 0, scale: 0.95 },
-      { y: 0, opacity: 1, scale: 1, duration: 0.5, ease: 'power2.out' }
-    );
-  }, 0);
 
   return (
     <div className="min-h-screen bg-[#0B0B0D] flex items-center justify-center p-4">
@@ -80,45 +79,24 @@ export default function AdminLogin({ onLogin }: AdminLoginProps) {
           </h2>
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            {useSupabaseAuth ? (
-              <div>
-                <label htmlFor="email" className="block text-sm text-[#F4F1EC]/70 mb-2">
-                  Email
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#F4F1EC]/40" />
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    value={credentials.email}
-                    onChange={handleChange}
-                    required
-                    className="w-full pl-12 pr-4 py-3 bg-[#0B0B0D] border border-[#F4F1EC]/10 rounded-xl text-[#F4F1EC] placeholder:text-[#F4F1EC]/30 focus:outline-none focus:border-[#C8A45C]/50 transition-colors"
-                    placeholder="Admin email"
-                  />
-                </div>
+            <div>
+              <label htmlFor="email" className="block text-sm text-[#F4F1EC]/70 mb-2">
+                Email
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#F4F1EC]/40" />
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  value={credentials.email}
+                  onChange={handleChange}
+                  required
+                  className="w-full pl-12 pr-4 py-3 bg-[#0B0B0D] border border-[#F4F1EC]/10 rounded-xl text-[#F4F1EC] placeholder:text-[#F4F1EC]/30 focus:outline-none focus:border-[#C8A45C]/50 transition-colors"
+                  placeholder="Admin email"
+                />
               </div>
-            ) : (
-              <div>
-                <label htmlFor="username" className="block text-sm text-[#F4F1EC]/70 mb-2">
-                  Username
-                </label>
-                <div className="relative">
-                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#F4F1EC]/40" />
-                  <input
-                    type="text"
-                    id="username"
-                    name="username"
-                    value={credentials.username}
-                    onChange={handleChange}
-                    required
-                    className="w-full pl-12 pr-4 py-3 bg-[#0B0B0D] border border-[#F4F1EC]/10 rounded-xl text-[#F4F1EC] placeholder:text-[#F4F1EC]/30 focus:outline-none focus:border-[#C8A45C]/50 transition-colors"
-                    placeholder="Enter username"
-                  />
-                </div>
-              </div>
-            )}
+            </div>
 
             <div>
               <label htmlFor="password" className="block text-sm text-[#F4F1EC]/70 mb-2">
@@ -160,9 +138,7 @@ export default function AdminLogin({ onLogin }: AdminLoginProps) {
 
           <div className="mt-6 pt-6 border-t border-[#F4F1EC]/10 text-center">
             <p className="text-sm text-[#F4F1EC]/40">
-              {useSupabaseAuth
-                ? 'Use the admin account created in Supabase.'
-                : 'Default: admin / vendaa2024'}
+              Enter your administrator credentials to continue.
             </p>
           </div>
         </div>
