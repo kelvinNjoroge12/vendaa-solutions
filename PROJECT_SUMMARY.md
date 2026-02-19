@@ -77,7 +77,7 @@ vendaa-final/
 │   └── index.css                # Global styles + Tailwind
 │
 ├── 🖼️ Static Assets (public/)
-│   ├── hero_branded_box.jpg
+│   ├── hero_branded_box.png
 │   ├── catalogue_*.jpg          # Product images
 │   ├── before_*.jpg / after_*.jpg
 │   └── ...more images

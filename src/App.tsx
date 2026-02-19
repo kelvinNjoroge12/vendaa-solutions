@@ -118,14 +118,14 @@ function App() {
           content="Transform your brand with custom merchandise, luxury corporate gifts, promotional products, and curated event kits. Water bottles, tote bags, apparel, notebooks &amp; more."
         />
         <meta property="og:url" content="https://vendaa.com" />
-        <meta property="og:image" content="https://vendaa.com/hero_branded_box.jpg" />
+        <meta property="og:image" content="https://vendaa.com/hero_branded_box.png" />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
         <meta property="og:locale" content="en_KE" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Vendaa Solutions | Premium Branded Merchandise" />
         <meta name="twitter:description" content="Custom branded merchandise, corporate gifts &amp; promotional products. Water bottles, tote bags, apparel, event kits &amp; more." />
-        <meta name="twitter:image" content="https://vendaa.com/hero_branded_box.jpg" />
+        <meta name="twitter:image" content="https://vendaa.com/hero_branded_box.png" />
         <link rel="canonical" href="https://vendaa.com" />
       </Helmet>
 

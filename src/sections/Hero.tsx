@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 
 export default function Hero() {
   const { settings } = useCms();
-  const heroImageSrc = settings.heroImage || '/hero_branded_box.jpg';
+  const heroImageSrc = settings.heroImage || '/hero_branded_box.png';
   const containerRef = useRef<HTMLDivElement>(null);
 
   const scrollToCatalogue = () => {
